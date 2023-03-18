@@ -24,6 +24,7 @@ async def write_id(id, filename):
 
 async def have_id(id, filename):
     await create_file_if_not_exists("chats.txt")
+    await create_file_if_not_exists("users.txt")
     with open(f"{filename}.txt", "r+") as f:
         f_text = f.read()
     if id in f_text:
@@ -145,5 +146,19 @@ async def process_start_command(message: types.__all__):
     if not message.group_chat_created:
         await message.reply("Выберите группу", reply_markup=await get_inline_buttons())
 
+ADMINS = [601610220]
+
+async def on_startup(db):
+    print('start')
+    for admin in ADMINS:
+        await bot.send_message(chat_id=admin, text="Чат-бот запущен.")
+
+
+async def on_shutdown(db):
+    print('end')
+    for admin in ADMINS:
+        await bot.send_message(chat_id=admin, text="Я отключён!")
+    await bot.close()
+
 if __name__ == '__main__':
-    executor.start_polling(dp)
+    executor.start_polling(dp, on_shutdown=on_shutdown, on_startup=on_startup)
