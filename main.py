@@ -58,6 +58,7 @@ async def delete_chat(chat_id):
 
 
 async def get_inline_buttons():
+    await create_file_if_not_exists('chats.txt')
     keyboard = types.InlineKeyboardMarkup()
     buttons = []
     with open("chats.txt", "r") as f:
