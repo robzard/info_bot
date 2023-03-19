@@ -122,7 +122,7 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
                                                                                             group=callback_data[
                                                                                                 'group'].replace('\n',
                                                                                                                  '')))
-    button_2 = types.InlineKeyboardButton(text="Не отправлять", callback_data='no')
+    button_2 = types.InlineKeyboardButton(text="Не отправлять", callback_data='no_send')
     keyboard.add(button_1).add(button_2)
     # await call.message.reply("Отправить сообщение во все чаты?", reply_markup=keyboard)
     await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=keyboard)
@@ -143,6 +143,12 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
     await bot.delete_message(call.message.chat.id, call.message.message_id)
     await call.message.reply_to_message.reply(
         f'Сообщение отправлено в группу "{callback_data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {count_send_chats}')
+
+
+@dp.callback_query_handler(invite_callback.filter(action=["send"]))
+async def send_random_value(call: types.CallbackQuery):
+    await bot.delete_message(call.message.chat.id, call.message.message_id)
+    await call.message.reply_to_message.reply("Сообщение не будет отправлено")
 
 
 @dp.message_handler(content_types=aiogram.types.ContentType.all())
