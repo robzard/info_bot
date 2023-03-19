@@ -67,8 +67,8 @@ async def get_inline_buttons():
     list_groups = [el.split(';')[1] for el in lines if ';' in el]
     groups = list(dict.fromkeys(list_groups))
     for group in groups:
-        keyboard.add(
-            types.InlineKeyboardButton(group, callback_data=invite_callback.new(action='select_group', group=group.replace('\n',''))))
+        keyboard.add(types.InlineKeyboardButton(group, callback_data=invite_callback.new(action='select_group', group=group.replace('\n', ''))))
+    keyboard.add(types.InlineKeyboardButton('Отправить всем', callback_data=invite_callback.new(action='select_group', group='')))
     return keyboard
 
 
@@ -99,7 +99,7 @@ async def process_start_command(message: types.Message):
 @dp.message_handler(commands=['add'])
 async def process_start_command(message: types.Message):
     if await have_id(message.from_user.id.__str__(), 'users'):
-        name_group = await get_group_chat_name(message.text.replace('\n',''))
+        name_group = await get_group_chat_name(message.text.replace('\n', ''))
         if await write_id(message.chat.id.__str__() + f";{name_group}" if name_group else '', 'chats'):
             await message.answer("Привет!\nЧат добавлен в рассылку!")
         else:
@@ -118,8 +118,10 @@ async def process_start_command(message: types.Message):
 @dp.callback_query_handler(invite_callback.filter(action=["select_group"]))
 async def send_random_value(call: types.CallbackQuery, callback_data: dict):
     keyboard = types.InlineKeyboardMarkup()
-    # button_1 = keyboard.add(types.InlineKeyboardButton('Отправить', callback_data=send_callback.new(action='send', group='e')))
-    button_1 = types.InlineKeyboardButton(text="Отправить", callback_data=send_callback.new(action='send', group=callback_data['group'].replace('\n','')))
+    button_1 = types.InlineKeyboardButton(text="Отправить", callback_data=send_callback.new(action='send',
+                                                                                            group=callback_data[
+                                                                                                'group'].replace('\n',
+                                                                                                                 '')))
     button_2 = types.InlineKeyboardButton(text="Не отправлять", callback_data='no')
     keyboard.add(button_1).add(button_2)
     # await call.message.reply("Отправить сообщение во все чаты?", reply_markup=keyboard)
@@ -134,11 +136,13 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
     for chat_id in await get_all_chats():
         if chat_id:
             if callback_data['group'] in chat_id:
-                count_send_chats+=1
+                count_send_chats += 1
                 group_id = int(chat_id.split(';')[0])
-                await bot.forward_message(group_id, call.message.chat.id, call.message.reply_to_message.message_id)
+                # await bot.forward_message(group_id, call.message.chat.id, call.message.reply_to_message.message_id)
+                await call.message.reply_to_message.send_copy(group_id)
     await bot.delete_message(call.message.chat.id, call.message.message_id)
-    await call.message.reply_to_message.reply(f'Сообщение отправлено в группу "{callback_data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {count_send_chats}')
+    await call.message.reply_to_message.reply(
+        f'Сообщение отправлено в группу "{callback_data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {count_send_chats}')
 
 
 @dp.message_handler(content_types=aiogram.types.ContentType.all())
@@ -146,7 +150,9 @@ async def process_start_command(message: types.__all__):
     if not message.group_chat_created:
         await message.reply("Выберите группу", reply_markup=await get_inline_buttons())
 
+
 ADMINS = [601610220]
+
 
 async def on_startup(db):
     print('start')
@@ -159,6 +165,7 @@ async def on_shutdown(db):
     for admin in ADMINS:
         await bot.send_message(chat_id=admin, text="Я отключён!")
     await bot.close()
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, on_shutdown=on_shutdown, on_startup=on_startup)
