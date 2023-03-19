@@ -145,7 +145,7 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
         f'Сообщение отправлено в группу "{callback_data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {count_send_chats}')
 
 
-@dp.callback_query_handler(invite_callback.filter(action=["no_send"]))
+@dp.callback_query_handler(text='no_send')
 async def send_random_value(call: types.CallbackQuery):
     await bot.delete_message(call.message.chat.id, call.message.message_id)
     await call.message.reply_to_message.reply("Сообщение не будет отправлено")
