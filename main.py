@@ -155,13 +155,13 @@ ADMINS = [601610220]
 
 
 async def on_startup(db):
-    print('START')
+    print('-START-')
     for admin in ADMINS:
         await bot.send_message(chat_id=admin, text="Чат-бот запущен.")
 
 
 async def on_shutdown(db):
-    print('END')
+    print('-END-')
     for admin in ADMINS:
         await bot.send_message(chat_id=admin, text="Я отключён!")
     await bot.close()
