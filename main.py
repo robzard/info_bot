@@ -87,8 +87,6 @@ async def get_inline_buttons_delete_groups(type_action='delete_group'):
         keyboard.add(types.InlineKeyboardButton(group, callback_data=invite_callback.new(action=type_action,
                                                                                          group=group.replace('\n',
                                                                                                              ''))))
-    keyboard.add(types.InlineKeyboardButton('Отправить всем',
-                                            callback_data=invite_callback.new(action=type_action, group='')))
     return keyboard
 
 
