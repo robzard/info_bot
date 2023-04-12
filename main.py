@@ -155,10 +155,9 @@ async def process_start_command(message: types.Message):
 @dp.message_handler(commands=['delete_group'])  # ДОДЕЛАТЬ
 async def process_start_command(message: types.Message):
     if await have_id(message.from_user.id.__str__(), 'users'):
-        if await have_id(message.from_user.id.__str__(), 'users'):
-            if not message.group_chat_created:
-                await message.reply("Выберите группу для удаления",
-                                    reply_markup=await get_inline_buttons_delete_groups())
+        if not message.group_chat_created:
+            await message.reply("Выберите группу для удаления",
+                                reply_markup=await get_inline_buttons_delete_groups())
 
 
 @dp.callback_query_handler(invite_callback.filter(action=["select_group"]))
@@ -232,8 +231,9 @@ async def send_random_value(call: types.CallbackQuery):
 
 @dp.message_handler(content_types=aiogram.types.ContentType.all())
 async def process_start_command(message: types.__all__):
-    if not message.group_chat_created:
-        await message.reply("Выберите группу", reply_markup=await get_inline_buttons())
+    if await have_id(message.from_user.id.__str__(), 'users'):
+        if not message.group_chat_created:
+            await message.reply("Выберите группу", reply_markup=await get_inline_buttons())
 
 
 ADMINS = [601610220]
