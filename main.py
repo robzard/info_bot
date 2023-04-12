@@ -229,7 +229,7 @@ async def send_random_value(call: types.CallbackQuery):
     await call.message.reply_to_message.reply("Сообщение не будет удалено")
 
 
-@dp.message_handler(content_types=aiogram.types.ContentType.all(), from_chat=True)
+@dp.message_handler(content_types=aiogram.types.ContentType.all())
 async def process_start_command(message: types.__all__):
     if message.chat.type == 'private':
         if await have_id(message.from_user.id.__str__(), 'users'):
