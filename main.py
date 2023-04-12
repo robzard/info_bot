@@ -229,9 +229,9 @@ async def send_random_value(call: types.CallbackQuery):
     await call.message.reply_to_message.reply("Сообщение не будет удалено")
 
 
-@dp.message_handler(content_types=aiogram.types.ContentType.all())
+@dp.message_handler(content_types=aiogram.types.ContentType.all(), from_chat=True)
 async def process_start_command(message: types.__all__):
-    if message.chat.id not in await get_all_chats():
+    if message.chat.type == 'private':
         if await have_id(message.from_user.id.__str__(), 'users'):
             if not message.group_chat_created:
                 await message.reply("Выберите группу", reply_markup=await get_inline_buttons())
