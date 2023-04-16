@@ -172,7 +172,6 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
     keyboard.add(button_1).add(button_2)
     # await call.message.reply("Отправить сообщение во все чаты?", reply_markup=keyboard)
     await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=keyboard)
-    print(call.message)
 
 
 @dp.callback_query_handler(invite_callback.filter(action=["delete_group"]))
@@ -187,20 +186,26 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
     keyboard.add(button_1).add(button_2)
     # await call.message.reply("Отправить сообщение во все чаты?", reply_markup=keyboard)
     await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=keyboard)
-    print(call.message)
 
 
 @dp.callback_query_handler(invite_callback.filter(action=["send"]))
 async def send_random_value(call: types.CallbackQuery, callback_data: dict):
-    print(call)
     count_send_chats = 0
     for chat_id in await get_all_chats():
         if chat_id:
             if callback_data['group'] in chat_id:
                 count_send_chats += 1
                 group_id = int(chat_id.split(';')[0])
-                # await bot.forward_message(group_id, call.message.chat.id, call.message.reply_to_message.message_id)
                 await call.message.reply_to_message.send_copy(group_id)
+
+                # try:
+                #     await call.message.reply_to_message.send_copy(group_id)
+                # except Exception as e:
+                #     err = 'The group has been migrated to a supergroup. New id: '
+                #     ex = str(e)
+                #     if err in ex:
+                #         new_id = ex.replace(err, '').replace('.', '').strip()
+                #         print(new_id)
     await bot.delete_message(call.message.chat.id, call.message.message_id)
     await call.message.reply_to_message.reply(
         f'Сообщение отправлено в группу "{callback_data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {count_send_chats}')
@@ -208,7 +213,6 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
 
 @dp.callback_query_handler(invite_callback.filter(action=["delete_group_in_files"]))
 async def send_random_value(call: types.CallbackQuery, callback_data: dict):
-    print(call)
     if await delete_id_in_file(callback_data['group'], 'groups'):
         await delete_id_in_file(callback_data['group'], 'chats')
         await bot.delete_message(call.message.chat.id, call.message.message_id)
