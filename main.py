@@ -29,15 +29,14 @@ bot = Bot(token=TOKEN)
 
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-
 send_button = KeyboardButton('Отправить', callback_data='send')
 cancel_button = KeyboardButton('Отмена', callback_data='cancel')
-markup_send = ReplyKeyboardMarkup(resize_keyboard=True).row(send_button, cancel_button)
+markup_send = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False).row(send_button, cancel_button)
 
 send_message_button = KeyboardButton('Отправить сообщение', callback_data='send')
 create_group_button = KeyboardButton('Создать группу чатов', callback_data='send')
 delete_group_button = KeyboardButton('Удалить группу чатов', callback_data='cancel')
-markup_menu = ReplyKeyboardMarkup(resize_keyboard=True).add(send_message_button).row(create_group_button,
+markup_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False).add(send_message_button).row(create_group_button,
                                                                                      delete_group_button)
 
 
@@ -73,12 +72,13 @@ async def get_groups_list():
     groups = list(dict.fromkeys(list_groups))
     return groups
 
+
 async def get_chats_from_group(group):
     groups = []
     for chat_id in await get_all_chats():
         if chat_id:
-            if group in chat_id:
-                group_id = int(chat_id.split(';')[0])
+            group_id = int(chat_id.split(';')[0])
+            if group == 'Отправить всем' or (group in chat_id):
                 groups.append(group_id)
     return groups
 
@@ -136,7 +136,7 @@ async def get_inline_buttons(album=None):
     if album is None:
         album = []
     await create_file_if_not_exists('chats.txt')
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     with open("chats.txt", "r") as f:
         lines = f.readlines()
     list_groups = [el.split(';')[1] for el in lines if ';' in el]
@@ -147,15 +147,17 @@ async def get_inline_buttons(album=None):
     return keyboard
 
 
-async def get_keyboard_buttons_delete_groups():
+async def get_keyboard_buttons_delete_groups(select_group_for_send_message=False):
     await create_file_if_not_exists('groups.txt')
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     with open("groups.txt", "r") as f:
         lines = f.readlines()
     list_groups = [el for el in lines]
     groups = list(dict.fromkeys(list_groups))
     for group in groups:
         keyboard.add(types.KeyboardButton(group))
+    if select_group_for_send_message:
+        keyboard.row(types.KeyboardButton('Отправить всем'))
     keyboard.row(types.KeyboardButton('Назад в меню'))
     return keyboard
 
@@ -189,7 +191,7 @@ async def set_default_commands(dp):
 
 
 async def get_menu_keyboard():
-    return ReplyKeyboardMarkup(resize_keyboard=True).add(types.KeyboardButton('Назад в меню'))
+    return ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False).add(types.KeyboardButton('Назад в меню'))
 
 
 @dp.message_handler(Command('start'))
@@ -234,14 +236,14 @@ async def send_random_value(call: types.CallbackQuery, callback_data: dict):
                            SelectGroup.select_group])
 async def send_welcomes1(message: types.Message, state: FSMContext):
     await message.delete()
-    await message.answer("Отмена действия - возвращение в меню", reply_markup=markup_menu)
+    msg = await message.answer("Отмена действия - возвращение в меню", reply_markup=markup_menu)
     await state.finish()
 
 
 @dp.message_handler(lambda message: message.text == "Отправить сообщение")
 async def send_welcomes(message: types.Message):
     await message.delete()
-    await message.answer("Выберите группу", reply_markup=await get_keyboard_buttons_delete_groups())
+    await message.answer("Выберите группу", reply_markup=await get_keyboard_buttons_delete_groups(True))
     await SelectGroup.select_group.set()
 
 
@@ -249,8 +251,9 @@ async def send_welcomes(message: types.Message):
 async def send_welcomes(message: types.Message, state: FSMContext):
     group = message.text
     if message.text in await get_groups_list():
-        await message.answer(f'Отправьте сообщения, которые необходимо переслать в группу "{group}"',
-                             reply_markup=await get_menu_keyboard())
+        await message.answer(f'Отправьте сообщения, которые необходимо переслать в группу "{group}"', reply_markup=await get_menu_keyboard())
+    elif group == 'Отправить всем':
+        await message.answer(f'Отправьте сообщения, которые необходимо переслать во все группы', reply_markup=await get_menu_keyboard())
     else:
         await message.answer(f'Группа "{message.text}" не найдена!', reply_markup=markup_menu)
         await state.finish()
@@ -307,9 +310,9 @@ async def send_welcomes(message: types.Message, state: FSMContext):
     data = await state.get_data()
     media_group = MediaGroup()
     media_group_docs = MediaGroup()
-    groups = await get_chats_from_group(data['group'])
+    groups = await get_chats_from_group(data['group'][0])
     if not groups:
-        await message.answer(f'В группе "{data["group"]}" отсутствуют добавленые чаты.', reply_markup=markup_menu)
+        await message.answer(f'В группе "{data["group"][0]}" отсутствуют добавленые чаты.', reply_markup=markup_menu)
         await state.finish()
         raise CancelHandler
     for m in data['media']:
@@ -327,7 +330,9 @@ async def send_welcomes(message: types.Message, state: FSMContext):
         for group in groups:
             await bot.send_media_group(chat_id=group, media=media_group_docs)
     await state.finish()
-    await message.answer(f'Сообщение отправлено в группу "{data["group"]}".\nКоличество чатов, в которые были направлены сообщения: {len(groups)}', reply_markup=markup_menu)
+    await message.answer(
+        f'Сообщение отправлено в группу "{data["group"][0]}".\nКоличество чатов, в которые были направлены сообщения: {len(groups)}',
+        reply_markup=markup_menu)
 
 
 @dp.message_handler(lambda message: message.text == "Отмена", state=MediaStates.waiting_for_media)
@@ -341,7 +346,7 @@ async def send_welcomes(message: types.Message, state: FSMContext):
                     state=MediaStates.waiting_for_media)
 async def handle_media(message: types.Message, state: FSMContext):
     current_media = await state.get_data()
-    group = current_media['group'][0]
+    group = current_media['group']
     current_media = current_media.get('media', [])
 
     if message.text:
