@@ -23,7 +23,7 @@ from aiogram.utils.exceptions import MessageToDeleteNotFound
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apschedulermiddleware import SchedulerMiddleware
 
-asyncio.set_event_loop_policy()
+# asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 invite_callback = CallbackData("invite", "action", "group")
 send_callback = CallbackData("invite", "action", "group")
